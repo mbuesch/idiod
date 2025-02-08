@@ -1,0 +1,24 @@
+[Unit]
+Description=idiod daemon
+Requires=idiod.socket nftables.service
+PartOf=idiod.socket
+StartLimitIntervalSec=0
+
+[Service]
+Type=notify
+NotifyAccess=main
+ExecStart=/opt/idiod/bin/idiod
+ExecReload=/bin/kill -HUP $MAINPID
+RuntimeDirectory=idiod
+RuntimeDirectoryMode=0755
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=10
+User=root
+Group=root
+Nice=-16
+
+[Install]
+# We do not want to do socket-activation.
+WantedBy=multi-user.target

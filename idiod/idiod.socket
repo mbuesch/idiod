@@ -1,0 +1,13 @@
+[Unit]
+Description=idiod socket
+PartOf=idiod.service
+
+[Socket]
+ListenStream=/run/idiod/idiod.sock
+Accept=no
+SocketUser=root
+SocketGroup=root
+SocketMode=0666
+
+[Install]
+WantedBy=sockets.target

@@ -1,0 +1,47 @@
+# -*- coding: utf-8 -*-
+
+[workspace]
+members = [
+    "idiod",
+    "idiod-apache-logfilter",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+rust-version = "1.93"
+license = "MIT OR Apache-2.0"
+authors = [ "Michael Büsch <m@bues.ch>" ]
+homepage = "https://bues.ch/"
+repository = "https://github.com/mbuesch/idiod"
+#readme = "README.md"
+#categories = [ ]
+#keywords = [ ]
+
+[workspace.dependencies]
+anyhow = "1"
+arraydeque = "0.5"
+clap = { version = "4", default-features = false }
+libc = "0.2"
+movavg = "2"
+nftables = "0.6"
+regex = "1"
+sd-notify = "0.5"
+serde = "1"
+tokio = "1"
+toml = "1"
+
+[profile.dev]
+debug = "limited"
+panic = "abort"
+
+[profile.release]
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+overflow-checks = true
+codegen-units = 1
+
+# vim: ts=4 sw=4 expandtab

@@ -1,0 +1,32 @@
+# Idiod daemon configuration
+
+[base]
+debug = 2
+max_num_peers = 65536
+peer_timeout_secs = 3600
+
+[limit]
+packets_per_sec = 20.0
+timeout_secs = 60
+
+[peer]
+new_peer_rate_thres = 20.0
+
+[peer.pkgrate]
+min_count = 10
+rate_thres = 15.0
+
+[net]
+path_allowlist = [ "/git/" ]
+firewall_block_timeout_base_secs = 10
+firewall_block_timeout_max_secs = 3600
+
+[score]
+min = 1.0
+max = 64.0
+idiot_thres = 32.0
+decay_interval_secs = 1.0
+decay_fact = 1.0
+decay = 0.25
+bad_base_fact = 2.0
+bad_pkg_rate = 1.0
