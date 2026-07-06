@@ -1,32 +1,169 @@
 # Idiod daemon configuration
 
+
 [base]
+#
+# Daemon base configuration.
+#
+
+# Log verbosity.
+# Increase this while debugging; keep it low in normal operation.
+#
+# 0 = no debug logs
+# 1 = normal debug logs
+# 2 = verbose debug logs
+#
 debug = 2
+
+# Maximum number of peers tracked at once.
+# Increasing this increases memory usage, but allows more peers to be tracked.
+# Monitor memory usage and adjust this value accordingly.
+#
 max_num_peers = 65536
+
+# How long an idle peer (= peer that doesn't contact us anymore) is kept in memory before it expires.
+#
 peer_timeout_secs = 3600
 
+
 [limit]
+#
+# Global limits configuration.
+#
+
+# Global event-rate limit.
+#
+# If the global event rate limit becomes active,
+# this is maximum event rate the firewall is configured to.
+#
+# See 'peer.new_peer_rate_thres' below for the activation threshold of this limit.
+#
 packets_per_sec = 20.0
+
+# How long the global event-rate limit will endure after the trigger condition becomes inactive.
+#
 timeout_secs = 60
 
+
 [peer]
+#
+# Peer configuration.
+#
+
+# Burst threshold for new peers.
+# Units: New peers per second.
+#
+# If new peers keep appearing at a rate higher than this, this can be a sign of a DoS flood attack.
+# The daemon will install a global limit.
+#
+# A new peer is a peer that is not in our memory, yet, or has expired from our memory.
+#
 new_peer_rate_thres = 20.0
 
+
 [peer.pkgrate]
+#
+# Peer event-rate evaluation configuration.
+# An "event" can be a packet received from a peer.
+#
+
+# Minimum number of events needed before the event-rate evaluation becomes active.
+#
 min_count = 10
+
+# Event-rate threshold for suspicious behavior.
+# Units: Events per second.
+#
+# If events from a peer exceed this rate, this event and each subsequent event
+# will trigger a 'score.bad_pkg_rate' scoring.
+# See the '[score]' configuration for more details about scoring.
+#
 rate_thres = 15.0
 
+
 [net]
-path_allowlist = [ "/git/" ]
+#
+# Network configuration.
+#
+
+# Events that have a network path starting with one of these paths will be ignored
+# by the classifier and will not be scored.
+#
+# What a "network path" means depends on the application sending the event to the daemon.
+# In case of Apache this is the path of the HTTP request, for example.
+#
+path_allowlist = [
+    # Never limit access to any git repository unter https://mydomain.com/git/...
+    "/git/"
+]
+
+# Firewall peer blocking rule timeout base.
+#
+# This time will grow exponentially with each subsequent block of the same peer.
+# The effective timeout is calculated as:
+#   (2 ** nr_blocked) * firewall_block_timeout_base_secs
+#
 firewall_block_timeout_base_secs = 10
+
+# Maximum firewall peer blocking rule timeout.
+#
+# The effective timeout is capped to this value.
+#
 firewall_block_timeout_max_secs = 3600
 
+
 [score]
+#
+# Score configuration.
+#
+# The 'score' is a floating point number that is kept per peer.
+# It tracks how suspicious a peer is.
+# The higher the score, the higher the probability of the peer being an abuser.
+#
+
+# Limit:
+# The lowest possible score.
+# The score is always saturated to this lower limit.
+#
 min = 1.0
+
+# Limit:
+# The biggest possible score.
+# The score is always saturated to this upper limit.
+#
 max = 64.0
+
+# Threshold:
+# If the score rises above this threshold, the peer will be blocked in the firewall.
+# See the '[net]' configuration for more details about how long this blocking will endure.
+#
 idiot_thres = 32.0
+
+# Decay interval:
+# How often each peer's score decay calculation is done.
+#
 decay_interval_secs = 1.0
+
+# Decay factor:
+# On each decay interval, the score is multiplied by this factor.
+#
 decay_fact = 1.0
+
+# Decay subtraction:
+# On each decay interval, this value is subtracted from the score.
+#
 decay = 0.25
+
+# Each time a peer is found to be an abuser the score is multiplied by this factor.
+#
+# Currently the only way a peer can be found to be an abuser is if its event rate exceeds the threshold.
+# See 'bad_pkg_rate' below.
+# So effectively the score is multiplied by bad_base_fact * bad_pkg_rate.
+#
 bad_base_fact = 2.0
+
+# Each time we receive an event from a peer and
+# the peer's event rate exceeds `peer.pkgrate.rate_thres`
+# the score is multiplied by this factor.
+#
 bad_pkg_rate = 1.0
