@@ -74,8 +74,8 @@ impl<const WINDOW_SIZE: usize> Rate<WINDOW_SIZE> {
 struct PeerScore(f32);
 
 impl PeerScore {
-    pub const fn new() -> Self {
-        Self(1.0)
+    pub fn new(conf: &Config) -> Self {
+        Self(conf.score.min)
     }
 
     pub const fn score(&self) -> f32 {
@@ -125,7 +125,7 @@ impl PeerState {
             addr,
             events: EventQueue::new(),
             pkg_rate: Rate::new(rate_thres * PKGRATE_LIM_FACT),
-            score: PeerScore::new(),
+            score: PeerScore::new(conf),
             blocked_count: Saturating(0),
         }
     }
