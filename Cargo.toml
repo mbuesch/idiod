@@ -25,7 +25,7 @@ anyhow = "1"
 arraydeque = "0.5"
 clap = { version = "4", default-features = false }
 libc = "0.2"
-movavg = "2"
+movavg = { version = "3", default-features = false, features = [ "fastfloat" ] }
 nftables = "0.6"
 regex = "1"
 sd-notify = "0.5"
