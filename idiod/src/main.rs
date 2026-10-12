@@ -37,8 +37,8 @@ struct Opts {
 
 async fn async_main(_opts: Arc<Opts>) -> ah::Result<()> {
     // Create async IPC channels.
-    let (exit_sock_tx, mut exit_sock_rx) = sync::mpsc::channel(1);
-    let exit_sock_tx = Arc::new(exit_sock_tx);
+    let (exit_tx, mut exit_rx) = sync::mpsc::channel(1);
+    let exit_tx = Arc::new(exit_tx);
 
     // Register unix signal handlers.
     let mut sigterm = signal(SignalKind::terminate()).unwrap();
@@ -55,13 +55,13 @@ async fn async_main(_opts: Arc<Opts>) -> ah::Result<()> {
 
     // Spawn task: Socket handler.
     task::spawn({
-        let exit_sock_tx = Arc::clone(&exit_sock_tx);
+        let exit_tx = Arc::clone(&exit_tx);
         let cls = Arc::clone(&cls);
         let fw = Arc::clone(&fw);
 
         async move {
             loop {
-                let exit_sock_tx = Arc::clone(&exit_sock_tx);
+                let exit_tx = Arc::clone(&exit_tx);
                 let cls = Arc::clone(&cls);
                 let fw = Arc::clone(&fw);
 
@@ -75,7 +75,7 @@ async fn async_main(_opts: Arc<Opts>) -> ah::Result<()> {
                         });
                     }
                     Err(e) => {
-                        let _ = exit_sock_tx.send(Err(e)).await;
+                        let _ = exit_tx.send(Err(e)).await;
                         break;
                     }
                 }
@@ -85,7 +85,7 @@ async fn async_main(_opts: Arc<Opts>) -> ah::Result<()> {
 
     // Task: Periodic worker.
     task::spawn({
-        let exit_sock_tx = Arc::clone(&exit_sock_tx);
+        let exit_tx = Arc::clone(&exit_tx);
         let cls = Arc::clone(&cls);
         let fw = Arc::clone(&fw);
 
@@ -94,8 +94,9 @@ async fn async_main(_opts: Arc<Opts>) -> ah::Result<()> {
             loop {
                 interval.tick().await;
                 cls.tick(&fw).await;
+
                 if let Err(e) = fw.remove_timed_out_idiots().await {
-                    let _ = exit_sock_tx.send(Err(e)).await;
+                    let _ = exit_tx.send(Err(e)).await;
                     break;
                 }
             }
@@ -130,7 +131,7 @@ async fn async_main(_opts: Arc<Opts>) -> ah::Result<()> {
                     eprintln!("Reload: Failed to notify systemd (MonotonicUsec): {e}");
                 }
             }
-            code = exit_sock_rx.recv() => {
+            code = exit_rx.recv() => {
                 exitcode = code.unwrap_or_else(|| Err(err!("Unknown error code.")));
                 break;
             }
